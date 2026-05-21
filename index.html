@@ -1,162 +1,865 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PyVoice — Python Voice-to-Code</title>
-<meta name="description" content="Write Python by speaking. PyVoice converts natural speech into valid Python code with automatic syntax correction.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PyVoice — Text To Python</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0b1020;
+      color: #f3f4f6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 28px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(10px);
+    }
+
+    .brand h1 {
+      font-size: 30px;
+      font-weight: 700;
+    }
+
+    .brand p {
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+
+    .status-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-transform: uppercase;
+      font-size: 12px;
+      letter-spacing: 1px;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: #22c55e;
+    }
+
+    .status-dot.loading {
+      background: #f59e0b;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.4; }
+      50% { opacity: 1; }
+      100% { opacity: 0.4; }
+    }
+
+    .app-shell {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      padding: 24px;
+      flex: 1;
+    }
+
+    .left-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .card {
+      background: #121933;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+    }
+
+    .card-header {
+      margin-bottom: 14px;
+    }
+
+    .card-header h2 {
+      font-size: 18px;
+    }
+
+    .primary-btn,
+    .toolbar button,
+    .button-row button,
+    .quick-grid button,
+    .full-btn,
+    .input-row button,
+    .help-header button {
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: 0.2s ease;
+      font-weight: 600;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      opacity: 0.92;
+    }
+
+    .primary-btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg,#2563eb,#7c3aed);
+      color: white;
+      font-size: 16px;
+    }
+
+    .primary-btn.active {
+      background: linear-gradient(135deg,#dc2626,#ef4444);
+    }
+
+    .transcript-area {
+      margin-top: 16px;
+      min-height: 120px;
+      padding: 14px;
+      border-radius: 14px;
+      background: #0b1020;
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #9ca3af;
+      line-height: 1.6;
+    }
+
+    .transcript-area.has-text {
+      color: white;
+    }
+
+    .button-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .button-row button,
+    .input-row button,
+    .full-btn,
+    .toolbar button,
+    .quick-grid button {
+      background: #1e293b;
+      color: white;
+      padding: 12px 14px;
+      flex: 1;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: #0b1020;
+      color: white;
+      outline: none;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(2,1fr);
+      gap: 10px;
+    }
+
+    .find-replace-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .preview-empty {
+      color: #9ca3af;
+    }
+
+    #selected-line-preview {
+      background: #0b1020;
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 70px;
+      margin-bottom: 10px;
+      overflow-x: auto;
+    }
+
+    .edit-log {
+      color: #9ca3af;
+      font-size: 14px;
+    }
+
+    .editor-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+    }
+
+    .editor-shell {
+      flex: 1;
+      display: flex;
+      overflow: hidden;
+      background: #121933;
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+      min-height: 650px;
+    }
+
+    .gutter {
+      width: 70px;
+      background: rgba(255,255,255,0.03);
+      padding-top: 20px;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      color: #6b7280;
+      text-align: right;
+      font-family: monospace;
+    }
+
+    .gutter-num {
+      height: 32px;
+      padding-right: 18px;
+      line-height: 32px;
+    }
+
+    .active-gutter {
+      color: #60a5fa;
+      font-weight: bold;
+    }
+
+    .code-lines {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      font-family: monospace;
+    }
+
+    .code-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 12px;
+      border-radius: 10px;
+      min-height: 32px;
+      cursor: pointer;
+      white-space: pre-wrap;
+    }
+
+    .code-line:hover {
+      background: rgba(255,255,255,0.04);
+    }
+
+    .code-line.selected {
+      background: rgba(37,99,235,0.25);
+      border: 1px solid rgba(96,165,250,0.5);
+    }
+
+    .line-actions {
+      display: flex;
+      gap: 6px;
+      opacity: 0;
+      transition: 0.2s;
+    }
+
+    .code-line:hover .line-actions {
+      opacity: 1;
+    }
+
+    .line-action-btn {
+      background: #1e293b;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: 4px 8px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .keyword { color: #c084fc; }
+    .string { color: #34d399; }
+    .number { color: #fbbf24; }
+    .comment { color: #6b7280; }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: #111827;
+      color: white;
+      padding: 14px 18px;
+      border-radius: 12px;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: 0.25s;
+      pointer-events: none;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .help-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .help-modal {
+      width: 90%;
+      max-width: 600px;
+      background: #121933;
+      border-radius: 20px;
+      padding: 24px;
+    }
+
+    .help-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .help-body ul {
+      margin-top: 10px;
+      margin-left: 20px;
+      margin-bottom: 20px;
+      color: #d1d5db;
+    }
+
+    @media (max-width: 1000px) {
+      .app-shell {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<div id="app">
+<header class="topbar">
+  <div class="brand">
+    <h1>PyVoice</h1>
+    <p>Turn voice or text into Python code</p>
+  </div>
 
-  <!-- TITLEBAR -->
-  <header id="titlebar">
-    <div class="logo">py<span>voice</span></div>
-    <nav class="tb-nav">
-      <span class="tb-badge">v1.0 · free &amp; open source</span>
-    </nav>
-    <div class="tb-spacer"></div>
-    <div id="status-indicator">
-      <span class="status-dot" id="status-dot"></span>
-      <span id="status-text">ready</span>
-    </div>
-    <button class="tb-btn" onclick="showHelp()">? help</button>
-  </header>
+  <div class="status-wrap">
+    <div id="status-dot" class="status-dot"></div>
+    <span id="status-text">ready</span>
+  </div>
+</header>
 
-  <!-- MAIN EDITOR -->
-  <main id="main-editor">
-    <div id="editor-tabs">
-      <div class="tab active">
-        <span class="tab-dot"></span>main.py
+<main class="app-shell">
+
+  <section class="left-panel">
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Voice Input</h2>
       </div>
-      <div class="editor-actions">
-        <button class="icon-btn" onclick="copyCode()" title="Copy all code">⎘ copy</button>
-        <button class="icon-btn" onclick="downloadCode()" title="Download as .py file">↓ download .py</button>
-        <button class="icon-btn" onclick="clearCode()" title="Clear all">✕ clear</button>
+
+      <button id="mic-btn" class="primary-btn" onclick="toggleMic()">
+        🎤 <span id="mic-label">Start Listening</span>
+      </button>
+
+      <div id="transcript-area" class="transcript-area">
+        Your speech appears here…
       </div>
-    </div>
 
-    <div id="code-scroll">
-      <div id="gutter"></div>
-      <div id="code-lines">
-        <div id="empty-state">
-          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
-            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
-            <line x1="12" y1="19" x2="12" y2="23"/>
-            <line x1="8" y1="23" x2="16" y2="23"/>
-          </svg>
-          <p>Speak into the mic, or type below to generate Python</p>
-          <p class="empty-hint">Try: <em>"def greet function that takes name and prints hello name"</em></p>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- SIDEBAR -->
-  <aside id="sidebar">
-
-    <!-- VOICE SECTION -->
-    <section class="sb-section" id="voice-wrap">
-      <div class="sb-header">Voice Input</div>
-      <div id="voice-section">
-        <button id="mic-btn" onclick="toggleMic()" aria-label="Toggle microphone">
-          <span class="mic-ring" aria-hidden="true"></span>
-          <span id="mic-label">Start Listening</span>
+      <div class="button-row">
+        <button onclick="insertTranscript()" id="insert-btn" disabled>
+          Insert
         </button>
-        <div id="transcript-area" aria-live="polite">Your speech appears here…</div>
-        <div id="voice-actions">
-          <button class="voice-btn" onclick="clearTranscript()">clear</button>
-          <button class="voice-btn primary" id="insert-btn" disabled onclick="insertTranscript()">→ convert &amp; insert</button>
-        </div>
+
+        <button onclick="clearTranscript()">
+          Clear
+        </button>
       </div>
-    </section>
-
-    <!-- QUICK COMMANDS -->
-    <section class="sb-section" id="commands-wrap">
-      <div class="sb-header">Voice Commands</div>
-      <div id="commands-list">
-        <div class="cmd-row"><code>"def greet function"</code><span>→ def with ():  </span></div>
-        <div class="cmd-row"><code>"for i in range 10"</code><span>→ for loop</span></div>
-        <div class="cmd-row"><code>"if x equals 5"</code><span>→ if x == 5:</span></div>
-        <div class="cmd-row"><code>"print hello world"</code><span>→ print("hello world")</span></div>
-        <div class="cmd-row"><code>"open paren / close paren"</code><span>→ ( )</span></div>
-        <div class="cmd-row"><code>"indent / new line"</code><span>→ spaces / \n</span></div>
-        <div class="cmd-row"><code>"import numpy as np"</code><span>→ import statement</span></div>
-        <div class="cmd-row"><code>"return x plus y"</code><span>→ return x + y</span></div>
-      </div>
-    </section>
-
-    <!-- LINE EDITOR -->
-    <section class="sb-section" id="edit-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
-      <div class="sb-header">Line Editor</div>
-      <div id="edit-inner">
-        <div class="edit-label">selected line</div>
-        <div id="selected-line-preview" class="preview-empty">← click a line to select it</div>
-        <div class="edit-label" style="margin-top:10px">quick edits</div>
-        <div id="quick-edits">
-          <button class="qe-btn" onclick="quickEdit('add type hints')">+ type hints</button>
-          <button class="qe-btn" onclick="quickEdit('add docstring')">+ docstring</button>
-          <button class="qe-btn" onclick="quickEdit('convert to list comprehension')">list comp</button>
-          <button class="qe-btn" onclick="quickEdit('add default parameter value of None')">+ default arg</button>
-          <button class="qe-btn" onclick="quickEdit('wrap in try except block')">try/except</button>
-          <button class="qe-btn" onclick="quickEdit('make async')">async</button>
-        </div>
-        <div class="edit-label" style="margin-top:10px">manual fix (regex/replace)</div>
-        <div id="find-replace">
-          <input id="find-input" type="text" placeholder="find…" spellcheck="false">
-          <input id="replace-input" type="text" placeholder="replace with…" spellcheck="false">
-          <button class="fr-btn" onclick="doFindReplace()">replace in line</button>
-        </div>
-        <div id="edit-log">Select a line to enable editing.</div>
-      </div>
-    </section>
-
-  </aside>
-
-  <!-- BOTTOM BAR -->
-  <footer id="bottombar">
-    <span class="bb-prompt">›</span>
-    <input id="cmd-input" type="text"
-      placeholder="Type in plain English or Python — e.g. 'def add function takes a and b returns a plus b'"
-      onkeydown="if(event.key==='Enter')handleCmdInput()"
-      spellcheck="false"
-      autocomplete="off">
-    <button id="cmd-btn" onclick="handleCmdInput()">convert &amp; add</button>
-  </footer>
-
-</div>
-
-<!-- HELP MODAL -->
-<div id="help-overlay" onclick="hideHelp()" style="display:none">
-  <div id="help-modal" onclick="event.stopPropagation()">
-    <div class="hm-header">
-      <span class="hm-title">How to use PyVoice</span>
-      <button onclick="hideHelp()" class="hm-close">✕</button>
     </div>
-    <div class="hm-body">
-      <h3>Voice Input</h3>
-      <p>Click <strong>Start Listening</strong> and speak naturally. The app uses your browser's built-in speech recognition (no server needed). When you're done, click <strong>convert &amp; insert</strong> to turn it into Python.</p>
-      <h3>Text Input</h3>
-      <p>Type plain English in the bottom bar and press Enter. The engine will parse it into Python with correct syntax automatically.</p>
-      <h3>Line Editing</h3>
-      <p>Click any line to select it. Use quick-edit buttons or find/replace to modify it. Hover a line for move/delete controls.</p>
-      <h3>Syntax Engine</h3>
-      <p>The converter handles: function definitions, loops, conditionals, print statements, imports, operators, punctuation keywords (open paren, colon, etc.), indentation, and more — all in JavaScript, no API key required.</p>
-      <h3>Browser Support</h3>
-      <p>Voice recognition works best in <strong>Chrome</strong> or <strong>Edge</strong>. Make sure microphone access is allowed in browser settings, and that Windows Settings → Privacy → Microphone has your browser enabled.</p>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Text Command</h2>
+      </div>
+
+      <div class="input-row">
+        <input id="cmd-input" placeholder="Example: create a for loop" onkeydown="if(event.key==='Enter') handleCmdInput()">
+        <button onclick="handleCmdInput()">Add</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Quick Edits</h2>
+      </div>
+
+      <div class="quick-grid">
+        <button onclick="quickEdit('comment')">Comment</button>
+        <button onclick="quickEdit('uncomment')">Uncomment</button>
+        <button onclick="quickEdit('indent')">Indent</button>
+        <button onclick="quickEdit('dedent')">Dedent</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Find & Replace</h2>
+      </div>
+
+      <div class="find-replace-grid">
+        <input id="find-input" placeholder="Find text">
+        <input id="replace-input" placeholder="Replace with">
+      </div>
+
+      <button class="full-btn" onclick="doFindReplace()">Apply Replace</button>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Selected Line</h2>
+      </div>
+
+      <div id="selected-line-preview" class="preview-empty">
+        ← click a line to select it
+      </div>
+
+      <div id="edit-log" class="edit-log">
+        Select a line to enable editing.
+      </div>
+    </div>
+
+  </section>
+
+  <section class="editor-panel">
+
+    <div class="toolbar">
+      <button onclick="copyCode()">Copy</button>
+      <button onclick="downloadCode()">Download</button>
+      <button onclick="clearCode()">Clear</button>
+      <button onclick="showHelp()">Help</button>
+    </div>
+
+    <div class="editor-shell">
+      <div id="gutter" class="gutter"></div>
+      <div id="code-lines" class="code-lines"></div>
+    </div>
+
+  </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<div id="help-overlay" class="help-overlay" style="display:none;">
+  <div class="help-modal">
+    <div class="help-header">
+      <h2>PyVoice Help</h2>
+      <button onclick="hideHelp()">✕</button>
+    </div>
+
+    <div class="help-body">
+      <h3>Examples</h3>
+      <ul>
+        <li>"create a function called greet"</li>
+        <li>"print hello world"</li>
+        <li>"for loop range 10"</li>
+        <li>"if x greater than 5"</li>
+      </ul>
+
+      <h3>Keyboard Shortcuts</h3>
+      <ul>
+        <li>Ctrl/Cmd + K → Focus input</li>
+        <li>Delete → Delete selected line</li>
+        <li>Arrow Keys → Move between lines</li>
+      </ul>
     </div>
   </div>
 </div>
 
-<div id="toast" role="status" aria-live="polite"></div>
+<script>
+const PyHighlight = {
+  highlight(line) {
+    return line
+      .replace(/(#.*)/g, '<span class="comment">$1</span>')
+      .replace(/(".*?"|\'.*?\')/g, '<span class="string">$1</span>')
+      .replace(/\b(def|return|for|while|if|else|elif|print|class|import|from|in|range|True|False)\b/g, '<span class="keyword">$1</span>')
+      .replace(/\b(\d+)\b/g, '<span class="number">$1</span>');
+  }
+};
 
-<script src="js/syntax.js"></script>
-<script src="js/highlight.js"></script>
-<script src="js/app.js"></script>
+const PySyntax = {
+  convert(text) {
+    const t = text.toLowerCase().trim();
+
+    if (t.includes('print')) {
+      const msg = text.replace(/print/i, '').trim() || '"Hello World"';
+      return `print(${JSON.stringify(msg)})`;
+    }
+
+    if (t.includes('for loop')) {
+      const match = t.match(/(\d+)/);
+      const num = match ? match[1] : 10;
+      return `for i in range(${num}):\n    print(i)`;
+    }
+
+    if (t.includes('while loop')) {
+      return `while True:\n    break`;
+    }
+
+    if (t.includes('if')) {
+      return `if condition:\n    pass`;
+    }
+
+    if (t.includes('function') || t.includes('def')) {
+      const match = t.match(/called\s+(\w+)/);
+      const name = match ? match[1] : 'my_function';
+      return `def ${name}():\n    pass`;
+    }
+
+    if (t.includes('class')) {
+      return `class MyClass:\n    def __init__(self):\n        pass`;
+    }
+
+    return `# ${text}`;
+  },
+
+  applyQuickEdit(line, instruction) {
+    switch(instruction) {
+      case 'comment':
+        return line.startsWith('#') ? line : '# ' + line;
+
+      case 'uncomment':
+        return line.replace(/^#\s?/, '');
+
+      case 'indent':
+        return '    ' + line;
+
+      case 'dedent':
+        return line.replace(/^ {1,4}/, '');
+
+      default:
+        return line;
+    }
+  }
+};
+
+let codeLines = [];
+let selectedLine = -1;
+let recognition = null;
+let isListening = false;
+let lastTranscript = '';
+
+function setStatus(text, loading = false) {
+  document.getElementById('status-text').textContent = text;
+  const dot = document.getElementById('status-dot');
+  dot.className = 'status-dot' + (loading ? ' loading' : '');
+}
+
+let toastTimer;
+function toast(msg, duration = 2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), duration);
+}
+
+function renderCode() {
+  const gutter = document.getElementById('gutter');
+  const linesEl = document.getElementById('code-lines');
+
+  if (codeLines.length === 0) {
+    gutter.innerHTML = '';
+
+    linesEl.innerHTML = `
+      <div style="padding:40px;color:#9ca3af;text-align:center;">
+        <h2 style="margin-bottom:10px;color:white;">Start Coding</h2>
+        <p>Use your voice or type commands to generate Python.</p>
+      </div>
+    `;
+
+    return;
+  }
+
+  gutter.innerHTML = codeLines.map((_, i) =>
+    `<div class="gutter-num ${selectedLine === i ? 'active-gutter' : ''}">${i + 1}</div>`
+  ).join('');
+
+  linesEl.innerHTML = codeLines.map((line, i) => `
+    <div class="code-line ${selectedLine === i ? 'selected' : ''}" onclick="selectLine(${i})">
+      <span>${PyHighlight.highlight(line)}</span>
+
+      <span class="line-actions">
+        <button class="line-action-btn" onclick="event.stopPropagation();deleteLine(${i})">del</button>
+        <button class="line-action-btn" onclick="event.stopPropagation();duplicateLine(${i})">dupe</button>
+      </span>
+    </div>
+  `).join('');
+}
+
+function selectLine(i) {
+  selectedLine = i;
+
+  document.getElementById('selected-line-preview').textContent = codeLines[i];
+  document.getElementById('selected-line-preview').classList.remove('preview-empty');
+
+  document.getElementById('edit-log').textContent = `Line ${i + 1} selected.`;
+
+  renderCode();
+}
+
+function deleteLine(i) {
+  codeLines.splice(i,1);
+
+  if (selectedLine >= codeLines.length) {
+    selectedLine = codeLines.length - 1;
+  }
+
+  renderCode();
+}
+
+function duplicateLine(i) {
+  codeLines.splice(i + 1, 0, codeLines[i]);
+  renderCode();
+  toast('Line duplicated');
+}
+
+function convertAndInsert(text) {
+  if (!text.trim()) return;
+
+  const result = PySyntax.convert(text);
+  const lines = result.split('\n');
+
+  if (selectedLine >= 0) {
+    codeLines.splice(selectedLine + 1, 0, ...lines);
+  } else {
+    codeLines.push(...lines);
+  }
+
+  renderCode();
+  toast('Code inserted');
+}
+
+function handleCmdInput() {
+  const input = document.getElementById('cmd-input');
+  const val = input.value.trim();
+
+  if (!val) return;
+
+  convertAndInsert(val);
+  input.value = '';
+}
+
+function toggleMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SR) {
+    toast('Speech recognition only works in Chrome/Edge');
+    return;
+  }
+
+  isListening ? stopMic() : startMic();
+}
+
+function startMic() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  recognition = new SR();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  recognition.lang = 'en-US';
+
+  recognition.onresult = e => {
+    let interim = '';
+    let final = '';
+
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const text = e.results[i][0].transcript;
+
+      if (e.results[i].isFinal) {
+        final += text + ' ';
+      } else {
+        interim += text;
+      }
+    }
+
+    if (final) {
+      lastTranscript += final;
+      document.getElementById('insert-btn').disabled = false;
+    }
+
+    const area = document.getElementById('transcript-area');
+    area.textContent = (lastTranscript + interim).trim() || 'Listening…';
+    area.classList.add('has-text');
+  };
+
+  recognition.onerror = () => {
+    toast('Microphone error');
+    stopMic();
+  };
+
+  recognition.start();
+  isListening = true;
+
+  document.getElementById('mic-btn').classList.add('active');
+  document.getElementById('mic-label').textContent = 'Listening…';
+
+  setStatus('listening', true);
+}
+
+function stopMic() {
+  isListening = false;
+
+  if (recognition) recognition.stop();
+
+  document.getElementById('mic-btn').classList.remove('active');
+  document.getElementById('mic-label').textContent = 'Start Listening';
+
+  setStatus('ready');
+}
+
+function clearTranscript() {
+  lastTranscript = '';
+
+  const area = document.getElementById('transcript-area');
+  area.textContent = 'Your speech appears here…';
+  area.classList.remove('has-text');
+
+  document.getElementById('insert-btn').disabled = true;
+}
+
+function insertTranscript() {
+  if (!lastTranscript) return;
+
+  convertAndInsert(lastTranscript);
+  clearTranscript();
+}
+
+function quickEdit(instruction) {
+  if (selectedLine < 0) {
+    toast('Select a line first');
+    return;
+  }
+
+  codeLines[selectedLine] = PySyntax.applyQuickEdit(
+    codeLines[selectedLine],
+    instruction
+  );
+
+  renderCode();
+  toast('Quick edit applied');
+}
+
+function doFindReplace() {
+  if (selectedLine < 0) {
+    toast('Select a line first');
+    return;
+  }
+
+  const find = document.getElementById('find-input').value;
+  const replace = document.getElementById('replace-input').value;
+
+  if (!find) {
+    toast('Enter text to find');
+    return;
+  }
+
+  codeLines[selectedLine] = codeLines[selectedLine].split(find).join(replace);
+
+  renderCode();
+  toast('Replace complete');
+}
+
+function copyCode() {
+  if (!codeLines.length) {
+    toast('No code to copy');
+    return;
+  }
+
+  navigator.clipboard.writeText(codeLines.join('\n'));
+  toast('Copied to clipboard');
+}
+
+function downloadCode() {
+  if (!codeLines.length) {
+    toast('No code to download');
+    return;
+  }
+
+  const blob = new Blob([codeLines.join('\n')], { type: 'text/plain' });
+
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'main.py';
+  a.click();
+
+  toast('Downloaded main.py');
+}
+
+function clearCode() {
+  if (!confirm('Clear all code?')) return;
+
+  codeLines = [];
+  selectedLine = -1;
+
+  renderCode();
+}
+
+function showHelp() {
+  document.getElementById('help-overlay').style.display = 'flex';
+}
+
+function hideHelp() {
+  document.getElementById('help-overlay').style.display = 'none';
+}
+
+window.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+    e.preventDefault();
+    document.getElementById('cmd-input').focus();
+  }
+
+  if (e.key === 'Escape') hideHelp();
+
+  if ((e.key === 'Delete' || e.key === 'Backspace') &&
+      selectedLine >= 0 &&
+      !['INPUT','TEXTAREA'].includes(document.activeElement.tagName)) {
+    deleteLine(selectedLine);
+  }
+});
+
+renderCode();
+setStatus('ready');
+</script>
+
 </body>
 </html>
