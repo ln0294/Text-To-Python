@@ -1,0 +1,194 @@
+# PyVoice — Python Voice-to-Code
+
+A free, open-source, browser-based tool that converts natural spoken English into valid Python code. No API key required. No backend. No cost.
+
+![PyVoice Screenshot](https://via.placeholder.com/900x500/0d1117/58a6ff?text=PyVoice)
+
+## Features
+
+- 🎤 **Voice input** via browser Web Speech API (Chrome / Edge)
+- ⚡ **Zero-dependency syntax engine** — converts spoken English to Python in JavaScript, no server needed
+- 🐍 **Auto-syntax**: parentheses, colons, quotes, operators, indentation, snake_case
+- 🖊️ **Line editor** with quick-edit buttons and find/replace
+- 🎨 **Syntax highlighting** built from scratch
+- ⬇️ **Download** your code as a `.py` file
+- ⌨️ **Keyboard navigation** (arrow keys, Ctrl+K to focus input)
+- 💸 **Completely free** to host on GitHub Pages
+
+---
+
+## Quick Start
+
+### Run Locally
+
+No build step needed — just open the file:
+
+```bash
+git clone https://github.com/YOUR_USERNAME/pyvoice.git
+cd pyvoice
+# Option A — open directly
+open index.html
+
+# Option B — use a local server (recommended for mic access)
+npx serve .
+# or
+python -m http.server 8080
+```
+
+> **Note:** Some browsers require a local server (not `file://`) for microphone access. Use `npx serve .` or Python's HTTP server.
+
+---
+
+## Deploy to GitHub Pages (free hosting)
+
+1. Push this repo to GitHub
+2. Go to your repo → **Settings** → **Pages**
+3. Under "Source", select **Deploy from a branch**
+4. Choose `main` branch, `/ (root)` folder
+5. Click **Save**
+
+Your site will be live at `https://YOUR_USERNAME.github.io/pyvoice` within a minute.
+
+---
+
+## Voice Commands Reference
+
+| Say this | Gets converted to |
+|---|---|
+| `"def greet function that takes name and age"` | `def greet(name, age):` |
+| `"for i in range 10"` | `for i in range(10):` |
+| `"if x equals 5"` | `if x == 5:` |
+| `"if x greater than or equal 0"` | `if x >= 0:` |
+| `"print hello world"` | `print("hello world")` |
+| `"return a plus b"` | `return a + b` |
+| `"import numpy as np"` | `import numpy as np` |
+| `"class Dog extends Animal"` | `class Dog(Animal):` |
+| `"set counter to zero"` | `counter = 0` |
+| `"try"` | `try:` |
+| `"except ValueError"` | `except ValueError:` |
+| `"open paren"` / `"close paren"` | `(` / `)` |
+| `"double quote"` | `"` |
+| `"new line"` | newline |
+| `"indent"` | 4 spaces |
+
+---
+
+## Project Structure
+
+```
+pyvoice/
+├── index.html        # Main app shell
+├── css/
+│   └── style.css     # Dark IDE theme
+├── js/
+│   ├── syntax.js     # Voice-to-Python engine (no API)
+│   ├── highlight.js  # Syntax highlighter
+│   └── app.js        # UI and voice logic
+└── README.md
+```
+
+---
+
+## Adding a Paywall (How It Would Work)
+
+PyVoice is fully free and open-source as-is. But if you wanted to monetize it (e.g. charge for an "AI line editing" premium feature), here's exactly how you'd do it:
+
+### The Concept
+
+Keep the core voice-to-code engine free. Gate premium features (AI-powered line editing, more advanced suggestions, team collaboration) behind a subscription.
+
+### What You Would Need to Build
+
+#### 1. Authentication — Clerk or Supabase Auth
+Users need accounts to track who's paying. The easiest modern options:
+
+- **[Clerk](https://clerk.com)** — drop-in auth UI, free tier, works with any frontend
+- **[Supabase](https://supabase.com)** — open-source Firebase alternative with built-in auth
+
+```html
+<!-- Example: Clerk drop-in -->
+<script src="https://cdn.clerk.dev/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+```
+
+#### 2. Payments — Stripe
+Stripe handles credit cards, subscriptions, and webhooks.
+
+- Create a product in your Stripe dashboard (e.g. "PyVoice Pro — $5/month")
+- Use **Stripe Checkout** (a hosted payment page) — no PCI compliance headache
+- On successful payment, Stripe fires a webhook to your backend
+
+```js
+// Redirect user to Stripe Checkout
+const stripe = Stripe('YOUR_PUBLISHABLE_KEY');
+stripe.redirectToCheckout({ sessionId: 'SESSION_ID_FROM_BACKEND' });
+```
+
+#### 3. Backend — Vercel Serverless Functions or Supabase Edge Functions
+You need a small backend to:
+- Create Stripe checkout sessions
+- Receive Stripe webhooks
+- Store "this user is Pro" in a database
+- Gate API calls (proxy the Anthropic API so users never see your key)
+
+With **Vercel**, you add an `api/` folder with serverless functions:
+
+```
+pyvoice/
+├── index.html
+├── api/
+│   ├── create-checkout.js   # Creates Stripe session
+│   ├── stripe-webhook.js    # Marks user as paid
+│   └── ai-edit.js           # Proxies Anthropic API (Pro only)
+```
+
+#### 4. Feature Gating
+In `app.js`, before running an AI feature:
+
+```js
+async function checkIsPro() {
+  const res = await fetch('/api/check-subscription', {
+    headers: { Authorization: `Bearer ${clerk.session.getToken()}` }
+  });
+  const { isPro } = await res.json();
+  return isPro;
+}
+
+async function runAiEdit() {
+  const pro = await checkIsPro();
+  if (!pro) {
+    toast('AI editing is a Pro feature — upgrade for $5/month');
+    return;
+  }
+  // ... proceed with edit
+}
+```
+
+### Full Stack Summary
+
+| What | Tool | Monthly Cost |
+|---|---|---|
+| Hosting | GitHub Pages | Free |
+| Auth | Clerk (free tier) | Free up to 10k MAU |
+| Payments | Stripe | 2.9% + 30¢ per transaction |
+| Backend | Vercel (free tier) | Free up to 100GB-hrs |
+| Database | Supabase (free tier) | Free up to 500MB |
+| AI calls | Anthropic API | ~$0.003 per request |
+
+**Total upfront cost to launch: $0.** You only pay Stripe's cut when you actually make money.
+
+---
+
+## Browser Support
+
+| Browser | Voice Input | Everything else |
+|---|---|---|
+| Chrome | ✅ | ✅ |
+| Edge | ✅ | ✅ |
+| Firefox | ❌ (no Web Speech API) | ✅ |
+| Safari | ⚠️ partial | ✅ |
+
+---
+
+## License
+
+MIT — do whatever you want with it.
