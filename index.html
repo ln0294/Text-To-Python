@@ -1,192 +1,162 @@
-# PyVoice — Python Voice-to-Code
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>PyVoice — Voice to Python Editor</title>
-
-  <!-- External Styles -->
-  <link rel="stylesheet" href="style.css" />
-
-  <!-- Google Font -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PyVoice — Python Voice-to-Code</title>
+<meta name="description" content="Write Python by speaking. PyVoice converts natural speech into valid Python code with automatic syntax correction.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,400&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-  <!-- Header -->
-  <header class="topbar">
-    <div class="brand">
-      <h1>PyVoice</h1>
-      <p>Voice-powered Python code editor</p>
-    </div>
+<div id="app">
 
-    <div class="status-wrap">
-      <div id="status-dot" class="status-dot"></div>
+  <!-- TITLEBAR -->
+  <header id="titlebar">
+    <div class="logo">py<span>voice</span></div>
+    <nav class="tb-nav">
+      <span class="tb-badge">v1.0 · free &amp; open source</span>
+    </nav>
+    <div class="tb-spacer"></div>
+    <div id="status-indicator">
+      <span class="status-dot" id="status-dot"></span>
       <span id="status-text">ready</span>
     </div>
+    <button class="tb-btn" onclick="showHelp()">? help</button>
   </header>
 
-  <!-- Main Layout -->
-  <main class="app-shell">
-
-    <!-- LEFT PANEL -->
-    <section class="left-panel">
-
-      <!-- Voice Controls -->
-      <div class="card">
-        <div class="card-header">
-          <h2>Voice Input</h2>
-        </div>
-
-        <button id="mic-btn" class="primary-btn" onclick="toggleMic()">
-          🎤 <span id="mic-label">Start Listening</span>
-        </button>
-
-        <div id="transcript-area" class="transcript-area">
-          Your speech appears here…
-        </div>
-
-        <div class="button-row">
-          <button onclick="insertTranscript()" id="insert-btn" disabled>
-            Insert Into Editor
-          </button>
-
-          <button onclick="clearTranscript()">
-            Clear
-          </button>
-        </div>
+  <!-- MAIN EDITOR -->
+  <main id="main-editor">
+    <div id="editor-tabs">
+      <div class="tab active">
+        <span class="tab-dot"></span>main.py
       </div>
-
-      <!-- Command Input -->
-      <div class="card">
-        <div class="card-header">
-          <h2>Command Input</h2>
-        </div>
-
-        <div class="input-row">
-          <input
-            type="text"
-            id="cmd-input"
-            placeholder="Type Python instructions..."
-            onkeydown="if(event.key==='Enter') handleCmdInput()"
-          />
-
-          <button onclick="handleCmdInput()">
-            Add
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick Edits -->
-      <div class="card">
-        <div class="card-header">
-          <h2>Quick Edits</h2>
-        </div>
-
-        <div class="quick-grid">
-          <button onclick="quickEdit('comment')">Comment</button>
-          <button onclick="quickEdit('uncomment')">Uncomment</button>
-          <button onclick="quickEdit('indent')">Indent</button>
-          <button onclick="quickEdit('dedent')">Dedent</button>
-          <button onclick="quickEdit('uppercase')">Uppercase</button>
-          <button onclick="quickEdit('lowercase')">Lowercase</button>
-        </div>
-      </div>
-
-      <!-- Find Replace -->
-      <div class="card">
-        <div class="card-header">
-          <h2>Find & Replace</h2>
-        </div>
-
-        <div class="find-replace-grid">
-          <input type="text" id="find-input" placeholder="Find" />
-          <input type="text" id="replace-input" placeholder="Replace" />
-        </div>
-
-        <button onclick="doFindReplace()" class="full-btn">
-          Apply Replace
-        </button>
-      </div>
-
-      <!-- Selected Line -->
-      <div class="card">
-        <div class="card-header">
-          <h2>Selected Line</h2>
-        </div>
-
-        <div id="selected-line-preview" class="preview-empty">
-          ← click a line to select it
-        </div>
-
-        <div id="edit-log" class="edit-log">
-          Select a line to enable editing.
-        </div>
-      </div>
-
-    </section>
-
-    <!-- RIGHT PANEL -->
-    <section class="editor-panel">
-
-      <!-- Toolbar -->
-      <div class="toolbar">
-        <button onclick="copyCode()">Copy</button>
-        <button onclick="downloadCode()">Download</button>
-        <button onclick="clearCode()">Clear</button>
-        <button onclick="showHelp()">Help</button>
-      </div>
-
-      <!-- Code Editor -->
-      <div class="editor-shell">
-        <div id="gutter" class="gutter"></div>
-
-        <div id="code-lines" class="code-lines" role="list">
-          <!-- Injected by JS -->
-        </div>
-      </div>
-
-    </section>
-
-  </main>
-
-  <!-- Toast -->
-  <div id="toast" class="toast"></div>
-
-  <!-- Help Modal -->
-  <div id="help-overlay" class="help-overlay" style="display:none;">
-    <div class="help-modal">
-      <div class="help-header">
-        <h2>PyVoice Help</h2>
-        <button onclick="hideHelp()">✕</button>
-      </div>
-
-      <div class="help-body">
-        <h3>Voice Commands</h3>
-        <ul>
-          <li>"define greet function"</li>
-          <li>"for loop range 10"</li>
-          <li>"if x greater than 5"</li>
-          <li>"print hello world"</li>
-        </ul>
-
-        <h3>Keyboard Shortcuts</h3>
-        <ul>
-          <li><strong>Ctrl/Cmd + K</strong> → Focus command box</li>
-          <li><strong>Arrow Keys</strong> → Navigate lines</li>
-          <li><strong>Delete</strong> → Delete selected line</li>
-          <li><strong>Escape</strong> → Close help modal</li>
-        </ul>
+      <div class="editor-actions">
+        <button class="icon-btn" onclick="copyCode()" title="Copy all code">⎘ copy</button>
+        <button class="icon-btn" onclick="downloadCode()" title="Download as .py file">↓ download .py</button>
+        <button class="icon-btn" onclick="clearCode()" title="Clear all">✕ clear</button>
       </div>
     </div>
-  </div>
 
-  <!-- Scripts -->
-  <script src="syntax.js"></script>
+    <div id="code-scroll">
+      <div id="gutter"></div>
+      <div id="code-lines">
+        <div id="empty-state">
+          <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" aria-hidden="true">
+            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="8" y1="23" x2="16" y2="23"/>
+          </svg>
+          <p>Speak into the mic, or type below to generate Python</p>
+          <p class="empty-hint">Try: <em>"def greet function that takes name and prints hello name"</em></p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- SIDEBAR -->
+  <aside id="sidebar">
+
+    <!-- VOICE SECTION -->
+    <section class="sb-section" id="voice-wrap">
+      <div class="sb-header">Voice Input</div>
+      <div id="voice-section">
+        <button id="mic-btn" onclick="toggleMic()" aria-label="Toggle microphone">
+          <span class="mic-ring" aria-hidden="true"></span>
+          <span id="mic-label">Start Listening</span>
+        </button>
+        <div id="transcript-area" aria-live="polite">Your speech appears here…</div>
+        <div id="voice-actions">
+          <button class="voice-btn" onclick="clearTranscript()">clear</button>
+          <button class="voice-btn primary" id="insert-btn" disabled onclick="insertTranscript()">→ convert &amp; insert</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- QUICK COMMANDS -->
+    <section class="sb-section" id="commands-wrap">
+      <div class="sb-header">Voice Commands</div>
+      <div id="commands-list">
+        <div class="cmd-row"><code>"def greet function"</code><span>→ def with ():  </span></div>
+        <div class="cmd-row"><code>"for i in range 10"</code><span>→ for loop</span></div>
+        <div class="cmd-row"><code>"if x equals 5"</code><span>→ if x == 5:</span></div>
+        <div class="cmd-row"><code>"print hello world"</code><span>→ print("hello world")</span></div>
+        <div class="cmd-row"><code>"open paren / close paren"</code><span>→ ( )</span></div>
+        <div class="cmd-row"><code>"indent / new line"</code><span>→ spaces / \n</span></div>
+        <div class="cmd-row"><code>"import numpy as np"</code><span>→ import statement</span></div>
+        <div class="cmd-row"><code>"return x plus y"</code><span>→ return x + y</span></div>
+      </div>
+    </section>
+
+    <!-- LINE EDITOR -->
+    <section class="sb-section" id="edit-wrap" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="sb-header">Line Editor</div>
+      <div id="edit-inner">
+        <div class="edit-label">selected line</div>
+        <div id="selected-line-preview" class="preview-empty">← click a line to select it</div>
+        <div class="edit-label" style="margin-top:10px">quick edits</div>
+        <div id="quick-edits">
+          <button class="qe-btn" onclick="quickEdit('add type hints')">+ type hints</button>
+          <button class="qe-btn" onclick="quickEdit('add docstring')">+ docstring</button>
+          <button class="qe-btn" onclick="quickEdit('convert to list comprehension')">list comp</button>
+          <button class="qe-btn" onclick="quickEdit('add default parameter value of None')">+ default arg</button>
+          <button class="qe-btn" onclick="quickEdit('wrap in try except block')">try/except</button>
+          <button class="qe-btn" onclick="quickEdit('make async')">async</button>
+        </div>
+        <div class="edit-label" style="margin-top:10px">manual fix (regex/replace)</div>
+        <div id="find-replace">
+          <input id="find-input" type="text" placeholder="find…" spellcheck="false">
+          <input id="replace-input" type="text" placeholder="replace with…" spellcheck="false">
+          <button class="fr-btn" onclick="doFindReplace()">replace in line</button>
+        </div>
+        <div id="edit-log">Select a line to enable editing.</div>
+      </div>
+    </section>
+
+  </aside>
+
+  <!-- BOTTOM BAR -->
+  <footer id="bottombar">
+    <span class="bb-prompt">›</span>
+    <input id="cmd-input" type="text"
+      placeholder="Type in plain English or Python — e.g. 'def add function takes a and b returns a plus b'"
+      onkeydown="if(event.key==='Enter')handleCmdInput()"
+      spellcheck="false"
+      autocomplete="off">
+    <button id="cmd-btn" onclick="handleCmdInput()">convert &amp; add</button>
+  </footer>
+
+</div>
+
+<!-- HELP MODAL -->
+<div id="help-overlay" onclick="hideHelp()" style="display:none">
+  <div id="help-modal" onclick="event.stopPropagation()">
+    <div class="hm-header">
+      <span class="hm-title">How to use PyVoice</span>
+      <button onclick="hideHelp()" class="hm-close">✕</button>
+    </div>
+    <div class="hm-body">
+      <h3>Voice Input</h3>
+      <p>Click <strong>Start Listening</strong> and speak naturally. The app uses your browser's built-in speech recognition (no server needed). When you're done, click <strong>convert &amp; insert</strong> to turn it into Python.</p>
+      <h3>Text Input</h3>
+      <p>Type plain English in the bottom bar and press Enter. The engine will parse it into Python with correct syntax automatically.</p>
+      <h3>Line Editing</h3>
+      <p>Click any line to select it. Use quick-edit buttons or find/replace to modify it. Hover a line for move/delete controls.</p>
+      <h3>Syntax Engine</h3>
+      <p>The converter handles: function definitions, loops, conditionals, print statements, imports, operators, punctuation keywords (open paren, colon, etc.), indentation, and more — all in JavaScript, no API key required.</p>
+      <h3>Browser Support</h3>
+      <p>Voice recognition works best in <strong>Chrome</strong> or <strong>Edge</strong>. Make sure microphone access is allowed in browser settings, and that Windows Settings → Privacy → Microphone has your browser enabled.</p>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/syntax.js"></script>
+<script src="js/highlight.js"></script>
+<script src="js/app.js"></script>
 </body>
 </html>
-
-MIT — do whatever you want with it.
